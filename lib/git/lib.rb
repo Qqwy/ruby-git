@@ -771,6 +771,62 @@ module Git
       arr_opts += [opts[:parents]].map { |p| ['-p', p] }.flatten if opts[:parents]
       command('commit-tree', arr_opts, true, "< #{escape t.path}")
     end
+
+    # calls hash-object -t blob
+    def hash_blob(blob_contents, opts = {})
+      t = Tempfile.new('blob-contents')
+      t.write(blob_contents)
+      t.close
+      
+      arr_opts = []
+      arr_opts << '-tblob'
+      arr_opts << '-w' if opts[:write]
+      arr_opts << "#{t.path}"
+      return command('hash-object', arr_opts)
+    end
+
+    # Git Plumbing command: updates the staging index with the given sha and pathname.
+    # see: http://git-scm.com/book/en/v2/Git-Internals-Git-Objects
+    # specify mode: :executable or mode: :symbolic to use different file modes for cacheinfo.
+    # (usually, the default is fine)
+    def update_index(sha, pathname, opts = {})
+
+      arr_opts = []
+      arr_opts << "--add" if opts[:add]
+      mode = case opts[:mode]
+        when :executable  then 100755
+        when :symbolic    then 120000
+        else 100644
+      end
+      arr_opts << "--cacheinfo"
+      arr_opts << "#{mode}"
+      arr_opts << "#{sha}"
+      arr_opts << "#{pathname}"
+
+      command('update-index', arr_opts)
+    end
+
+    # Allows creating a file (so no directory) directly on a bare repository.
+    # This is done by using the git plumbing commands, see: http://git-scm.com/book/en/v2/Git-Internals-Git-Objects
+    # Start a new commit-tree by explicitly specifying `nil` as parent_commit.
+    #
+    def add_file_on_bare(file_path,file_contents,branch_name,parent_commit,commit_message)
+      blob_sha = hash_blob(file_contents, write: true)
+      puts "BLOB SHA: #{blob_sha}"
+      update_index(blob_sha, file_path)
+      tree_sha = write_tree
+      puts "TREE SHA: #{tree_sha}"
+
+      if parent_commit.nil? then
+        commit_sha = commit_tree(tree_sha, message:commit_message)
+      else
+        commit_sha = commit_tree(tree_sha, message:commit_message, parent: parent_commit)
+      end
+      puts "COMMIT SHA:#{commit_sha}"
+      #update_ref(branch,commit_sha) #Will fail if branch does not exist yet.
+      command("branch", ["-f",branch_name,commit_sha])
+      return commit_sha
+    end
     
     def update_ref(branch, commit)
       command('update-ref', [branch, commit])
@@ -835,7 +891,7 @@ module Git
     end
 
 
-    private
+    #private
 
     # Systen ENV variables involved in the git commands.
     #
