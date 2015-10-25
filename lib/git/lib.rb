@@ -773,7 +773,7 @@ module Git
     end
 
     # calls hash-object -t blob
-    def hash_blob(file_like, opts = {})
+    def hash_blob(blob_contents, opts = {})
       t = Tempfile.new('blob-contents', :binmode => true)
       t.close
       tb = File.open(t)
