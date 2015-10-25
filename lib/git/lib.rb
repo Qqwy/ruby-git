@@ -823,7 +823,11 @@ module Git
       end
 
       if opts[:create_branch_if_not_exists]
-        command("branch", ["-f",branch_name,commit_sha])
+        begin
+          command("branch", ["-f",branch_name,commit_sha])
+        rescue Git::GitExecuteError
+          update_ref("refs/heads/#{branch_name}",commit_sha)
+        end
       else
         update_ref("refs/heads/#{branch_name}",commit_sha)
       end
