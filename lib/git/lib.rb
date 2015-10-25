@@ -810,21 +810,23 @@ module Git
     # This is done by using the git plumbing commands, see: http://git-scm.com/book/en/v2/Git-Internals-Git-Objects
     # Start a new commit-tree by explicitly specifying `nil` as parent_commit.
     #
-    def add_file_on_bare(file_path,file_contents,branch_name,parent_commit,commit_message)
+    # If passed the option `create_branch_if_not_exists: true`, then the specified branch will be made if it did not exist.
+    def add_file_on_bare(file_path,file_contents,branch_name,parent_commit,commit_message, opts = {})
       blob_sha = hash_blob(file_contents, write: true)
-      puts "BLOB SHA: #{blob_sha}"
       update_index(blob_sha, file_path)
       tree_sha = write_tree
-      puts "TREE SHA: #{tree_sha}"
 
       if parent_commit.nil? then
         commit_sha = commit_tree(tree_sha, message:commit_message)
       else
         commit_sha = commit_tree(tree_sha, message:commit_message, parent: parent_commit)
       end
-      puts "COMMIT SHA:#{commit_sha}"
-      #update_ref(branch,commit_sha) #Will fail if branch does not exist yet.
-      command("branch", ["-f",branch_name,commit_sha])
+
+      if opts[:create_branch_if_not_exists]
+        update_ref(branch,commit_sha)
+      else
+        command("branch", ["-f",branch_name,commit_sha])
+      end
       return commit_sha
     end
     
