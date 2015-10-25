@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
   s.license = 'MIT'
   s.name = 'git'
   s.summary = 'Ruby/Git is a Ruby library that can be used to create, read and manipulate Git repositories by wrapping system calls to the git binary.'
-  s.version = '1.2.9.3'
+  s.version = '1.2.9.3.1'
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.require_paths = ['lib']
