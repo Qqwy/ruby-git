@@ -534,6 +534,33 @@ module Git
     def current_branch
       self.lib.branch_current
     end
+
+    # allows adding a file directly on a bare repository
+    #
+    # @param [String] file_path the path of the file you have changed (or are creating)
+    # @param [String] file_contents the new contents of this file
+    # @param [String] the name of the branch to commit this new file to.
+    # @param [String] commit_message the message that will be shown in the commit log.
+    # @param [Hash] opts extra options: 
+    # `parent_commit` will refer to a different parent commit than branch_name currently points to. 
+    #  =>   `create_branch_if_not_exists` will create a new branch; If not passing along the parent_commit option as well, this branch will be empty (with the exception of the just-created file). 
+    def bare_add_file(file_path, file_contents, branch_name, commit_message, opts={})
+
+      if !self.is_branch?(branch_name) && !opts[:create_branch_if_not_exists]
+        throw "Error: `Git::Base#bare_add_file` called with an unexisting branchname, but without the `create_branch_if_not_exists: true` option."
+      end
+
+      if opts[:parent_commit]
+        parent_commit_sha = opts[:parent_commit]
+      else
+        begin
+          parent_commit_sha = self.gtree("heads/#{branch_name}").sha
+        rescue Git::GitExecuteError #When branch does not yet exist.
+          parent_commit_sha = nil
+        end
+      end
+      self.lib.bare_add_file(file_path, file_contents, branch_name, parent_commit_sha, commit_message, {create_branch_if_not_exists: opts[:create_branch_if_not_exists]})
+    end
     
   end
   

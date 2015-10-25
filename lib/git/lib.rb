@@ -811,9 +811,9 @@ module Git
     # Start a new commit-tree by explicitly specifying `nil` as parent_commit.
     #
     # If passed the option `create_branch_if_not_exists: true`, then the specified branch will be made if it did not exist.
-    def add_file_on_bare(file_path,file_contents,branch_name,parent_commit,commit_message, opts = {})
+    def bare_add_file(file_path,file_contents,branch_name,parent_commit,commit_message, opts = {})
       blob_sha = hash_blob(file_contents, write: true)
-      update_index(blob_sha, file_path)
+      update_index(blob_sha, file_path, add: true)
       tree_sha = write_tree
 
       if parent_commit.nil? then
@@ -823,9 +823,9 @@ module Git
       end
 
       if opts[:create_branch_if_not_exists]
-        update_ref(branch,commit_sha)
-      else
         command("branch", ["-f",branch_name,commit_sha])
+      else
+        update_ref("refs/heads/#{branch_name}",commit_sha)
       end
       return commit_sha
     end
