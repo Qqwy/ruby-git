@@ -773,15 +773,17 @@ module Git
     end
 
     # calls hash-object -t blob
-    def hash_blob(blob_contents, opts = {})
-      t = Tempfile.new('blob-contents')
-      t.write(blob_contents)
+    def hash_blob(file_like, opts = {})
+      t = Tempfile.new('blob-contents', :binmode => true)
       t.close
+      tb = File.open(t)
+      tb.write(blob_contents)
+      tb.close
       
       arr_opts = []
       arr_opts << '-tblob'
       arr_opts << '-w' if opts[:write]
-      arr_opts << "#{t.path}"
+      arr_opts << "#{tb.path}"
       return command('hash-object', arr_opts)
     end
 
